@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>매수 - <%= stock_id %> | <%= stockName %></title>
+</head>
+<body>
+    <h1>종목코드: <%= stock_id %> | 종목명: <%= stockName %></h1>
+    
+    <!-- 5단계 호가창 -->
+    <h2>5단계 호가창</h2>
+    <table border="1">
+        <thead>
+            <tr>
+                <th>매도잔량</th>
+                <th>매도호가</th>
+                <th>매수호가</th>
+                <th>매수잔량</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 5단계 호가창: 매도 호가와 매수 호가를 각각 높은 가격 순으로 표시 -->
+            <% for (let i = 0; i < 5; i++) { %> 
+                <tr>
+                    <% const index = 5 - sellOrders.length; %>
+                    
+                    <% if (i < index) { %> <!-- 빈 칸을 먼저 출력 -->
+                        <td>-</td>
+                        <td>-</td>
+                        <td></td>
+                        <td></td>
+                    <% } else { %> <!-- 데이터가 있는 경우만 sellOrders 접근 -->
+                        <td><%= sellOrders[i - index] ? sellOrders[i - index].sell_quantity : '-' %></td>
+                        <td><%= sellOrders[i - index] ? sellOrders[i - index].sell_price : '-' %></td>
+                        <td></td>
+                        <td></td>
+                    <% } %>
+                </tr>
+            <% } %>
+            
+            <% for (let j = 0; j < 5; j++) { %>
+                <tr>
+                    <td></td>
+                    <td></td>
+                    <td><%= buyOrders[j] ? buyOrders[j].buy_price : '-' %></td>
+                    <td><%= buyOrders[j] ? buyOrders[j].buy_quantity : '-' %></td>
+                </tr>
+            <% } %>
+            
+        </tbody>
+    </table>
+
+    <!-- 거래 가능 수량 -->
+    <h2>현재 잔액: <%= balance %> 원</h2>
+    <h2>내 보유 수량: <%= holdingQuantity %> 개</h2>
+
+    <!-- 시장가 매수 -->
+    <h2>시장가 매수</h2>
+    <form id="marketBuyForm" method="POST" action="/transactions/market-buy">
+        <label>수량:</label>
+        <input type="number" name="quantity" min="1" required>
+        <input type="hidden" name="stock_id" value="<%= stock_id %>">
+        <input type="hidden" name="account_id" value="<%= account_id %>">
+        <button type="submit">시장가 매수</button>
+    </form>
+
+    <!-- 지정가 매수 -->
+    <h2>지정가 매수</h2>
+    <form id="limitBuyForm" method="POST" action="/transactions/limit-buy">
+        <label>가격:</label>
+        <input type="number" name="price" min="1" required>
+        <label>수량:</label>
+        <input type="number" name="quantity" min="1" required>
+        <input type="hidden" name="stock_id" value="<%= stock_id %>">
+        <input type="hidden" name="account_id" value="<%= account_id %>">
+        <button type="submit">지정가 매수</button>
+    </form>
+
+    <script>
+        document.getElementById('marketBuyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            const response = await fetch('/transactions/market-buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert(result.message);
+            }
+        });
+
+        document.getElementById('limitBuyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const data = Object.fromEntries(formData);
+
+            const response = await fetch('/transactions/limit-buy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert(result.message);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Main Page</title>
+</head>
+<body>
+    <h1>안녕하세요,  <%= clientName %>님</h1>
+
+    <% if (typeof accountID !== 'undefined') { %>
+        <button id="myAccount">내 정보</button>
+        <button id="stockInfo">주식 정보</button>
+        <button id="deleteUser">회원 탈퇴</button>
+        <button id="logout">로그아웃</button>
+
+        <script>
+            const accountButton = document.getElementById("myAccount");
+            const stockInfoButton = document.getElementById("stockInfo");
+            const deleteButton = document.getElementById("deleteUser");
+            const logOutButton = document.getElementById("logout");
+    
+            accountButton.addEventListener('click', () => {
+                window.location = 'http://localhost:3000/account/myAccount?account_id=<%= accountID %>&user_id=<%= userID %>';
+            });
+            stockInfoButton.addEventListener('click', () => {
+                window.location = 'http://localhost:3000/stock/stockList?account_id=<%= accountID %>&clientName=<%= clientName %>';
+            });
+            deleteButton.addEventListener('click', () => {
+                window.location = 'http://localhost:3000/users/deleteUser?user_id=<%= userID %>';
+            })
+            logOutButton.addEventListener('click', () => {
+                window.location = 'http://localhost:3000/';
+            })
+        </script>
+    <% } else { %>
+        <button id="createAccount">계좌 개설하기</button>
+        <script>
+            const createButton = document.getElementById("createAccount");
+        
+            createButton.addEventListener('click', () => {
+                window.location = "http://localhost:3000/account/createAccount?user_id=<%= userID %>&clientName=<%= clientName %>";
+            });
+        </script>
+    <% } %>
+</body>
+</html>

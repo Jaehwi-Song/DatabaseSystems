@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>내 주식 거래 내역</title>
+</head>
+<body>
+    <h1>내 주식 거래 내역</h1>
+    
+    <!-- 기간 필터 입력 -->
+    <p>
+        <span>기간 검색: </span>
+        <input type="date" id="startDate">
+        <span>~</span>
+        <input type="date" id="endDate">
+        <button onclick="filterByDate()">조회</button>
+    </p>
+    
+    <!-- 종목명 부분 검색 입력 -->
+    <p>
+        <span>종목명 검색: </span>
+        <input type="text" id="stockSearch" placeholder="종목명 입력">
+        <button onclick="searchByStockName()">조회</button>
+    </p>
+
+    <!-- 거래 내역 테이블 -->
+    <table border="1">
+        <thead>
+            <tr>
+                <th>종목명</th>
+                <th>거래 타입</th>
+                <th>매수/매도가</th>
+                <th>거래 수량</th>
+                <th>미체결 수량</th>
+                <th>거래 날짜</th>
+                <th>거래 시간</th>
+                <th>취소</th>
+            </tr>
+        </thead>
+        <tbody id="transactionList">
+            <!-- 거래 내역이 이곳에 표시됩니다 -->
+        </tbody>
+    </table>
+
+    <script>
+        const accountId = "<%= account_id %>";
+
+        // 기간 필터를 통한 거래 내역 조회
+        function filterByDate() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            fetch(`/account/userTransactionHistory/filter?account_id=${accountId}&startDate=${startDate}&endDate=${endDate}`)
+                .then(response => response.json())
+                .then(data => displayTransactions(data));
+        }
+
+        // 종목명 검색을 통한 거래 내역 조회
+        function searchByStockName() {
+            const stockName = document.getElementById('stockSearch').value;
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            // 기간이 설정되어 있는 경우에만 쿼리 스트링에 추가
+            const url = startDate && endDate
+                ? `/account/userTransactionHistory/search?account_id=${accountId}&stockName=${stockName}&startDate=${startDate}&endDate=${endDate}`
+                : `/account/userTransactionHistory/search?account_id=${accountId}&stockName=${stockName}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => displayTransactions(data));
+        }
+
+        // 거래 내역 테이블에 데이터 표시
+        function displayTransactions(transactions) {
+            const transactionList = document.getElementById('transactionList');
+            transactionList.innerHTML = ''; // 기존 내용 지우기
+
+            transactions.forEach(transaction => {
+                const dateOnly = new Date(transaction.date).toLocaleDateString();
+                const isPending = transaction.left_quantity > 0;
+
+                transactionList.innerHTML += `
+                    <tr>
+                        <td>${transaction.name}</td>
+                        <td>${transaction.type}</td>
+                        <td>${transaction.price}</td>
+                        <td>${transaction.quantity}</td>
+                        <td>${transaction.left_quantity}</td>
+                        <td>${dateOnly}</td>
+                        <td>${transaction.time}</td>
+                        <td>
+                            ${isPending ? `<button onclick="cancelTransaction(${transaction.transaction_id}, '${transaction.type}', ${transaction.price}, ${transaction.left_quantity})"}>취소</button>` : ''}
+                    </tr>
+                `;
+            });
+        }
+
+         // 거래 취소 기능
+         async function cancelTransaction(transactionId, type, price, leftQuantity) {
+            const response = await fetch(`/account/cancelTransaction`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ transactionId, accountId, type, price, leftQuantity })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert(result.message);
+                filterByDate();
+            } else {
+                alert(result.message);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><%= clientName %>님의 계좌정보</title>
+</head>
+<body>
+    <h1><%= clientName %>님의 계좌정보</h1>
+    <h2>예수금: <span id="balance"><%= account.balance %></span> 원</h2>
+
+    <p>
+        <span>입금하기: </span>
+        <input type="number" id="depositAmount" placeholder="금액 입력">
+        <button onclick="deposit()">입금</button>
+    </p>
+    <p>
+        <span>출금하기</span>
+        <input type="number" id="withdrawAmount" placeholder="금액 입력">
+        <button onclick="withdraw()">출금</button>
+    </p>
+
+    <h2>보유 주식 현황</h2>
+    
+    <p>
+        <input type="text" id="stockSearch" placeholder="종목명 검색">
+        <button onclick="searchStock()">조회</button>
+    </p>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>종목명</th>
+                <th>매수가</th>
+                <th>현재가</th>
+                <th>보유수량</th>
+                <th>거래가능수량</th>
+                <th>평가손익</th>
+                <th>등락률</th>
+            </tr>
+        </thead>
+        <tbody id="stockList">
+            <% owningStocks.forEach(stock => { %>
+                <tr>
+                    <td><%= stock.name %></td>
+                    <td><%= stock.buying_price %></td>
+                    <td><%= stock.current_price %></td>
+                    <td><%= stock.quantity %></td>
+                    <td><%= stock.tradable_quantity %></td>
+                    <td><%= stock.profit_loss %></td>
+                    <td><%= stock.price_change_rate %> %</td>
+                </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <br>
+    <button onclick="window.location.href='/account/userTransactionHistory?account_id=<%= account.account_id %>'">내 주식 거래 내역</button>
+
+    <script>
+        const accountId = "<%= account.account_id %>";
+
+        function deposit() {
+            const amount = document.getElementById('depositAmount').value;
+            fetch('/account/deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account_id: accountId, amount })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const balance = document.getElementById('balance');
+                    balance.innerText = parseFloat(balance.innerText) + parseFloat(amount);
+                    alert("입금이 완료되었습니다.");
+                }
+            });
+        }
+
+        function withdraw() {
+            const amount = parseFloat(document.getElementById('withdrawAmount').value);
+            const balance = parseFloat(document.getElementById('balance').innerText);
+
+            if (amount > balance) {
+                alert("잔액이 부족합니다.");
+                return;
+            }
+
+            fetch('/account/withdraw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ account_id: accountId, amount })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('balance').innerText = balance - amount;
+                    alert("출금이 완료되었습니다.");
+                } else {
+                    alert(data.message || "출금에 실패했습니다.");
+                }
+            });
+        }
+
+        function searchStock() {
+            const stockName = document.getElementById('stockSearch').value;
+            fetch(`/account/searchStock?account_id=${accountId}&stockName=${stockName}`)
+                .then(response => response.json())
+                .then(data => {
+                    const stockList = document.getElementById('stockList');
+                    stockList.innerHTML = ''; // 기존 결과 지우기
+                    data.forEach(stock => {
+                        stockList.innerHTML += `
+                            <tr>
+                                <td>${stock.name}</td>
+                                <td>${stock.buying_price}</td>
+                                <td>${stock.current_price}</td>
+                                <td>${stock.quantity}</td>
+                                <td>${stock.tradable_quantity}</td>
+                                <td>${stock.profit_loss} </td>
+                                <td>${stock.price_change_rate} %</td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+    </script>
+</body>
+</html>

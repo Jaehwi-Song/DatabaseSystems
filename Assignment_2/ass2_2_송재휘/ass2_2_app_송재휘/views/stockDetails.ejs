@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title><%= stockInfo.name %> - 주식 세부 정보</title>
+</head>
+<body>
+    <h1>종목코드: <%= stockInfo.stock_id %> | 종목명: <%= stockInfo.name %></h1>
+
+    <h2>종목 정보</h2>
+    <p>현재 가격: <%= recent_price %></p>
+    <p>전일 종가 대비 주가 등락률: <%= (priceChangeRate !== null && priceChangeRate !== undefined) ? priceChangeRate.toFixed(2) + '%' : 'N/A' %></p>
+
+    <h2>종목 거래 내역</h2>
+
+    <p>
+        <span>기간 검색: </span>
+        <input type="date" id="startDate">
+        <span>~</span>
+        <input type="date" id="endDate">
+        <button onclick="filterTransactions()">조회</button>
+    </p>
+    
+    <table border="1">
+        <thead>
+            <tr>
+                <th>거래 타입</th>
+                <th>매수/매도가</th>
+                <th>거래 수량</th>
+                <th>거래 날짜</th>
+                <th>거래 시간</th>
+            </tr>
+        </thead>
+        <tbody id="transactionList">
+            <!-- 거래 내역이 이곳에 표시됩니다 -->
+        </tbody>
+    </table>
+
+    <br>
+    <button onclick="goToBuyPage()">매수</button>
+    <button onclick="goToSellPage()">매도</button>
+
+    <script>
+        const stockID = "<%= stockInfo.stock_id %>";
+        const clientName = "<%= clientName %>";
+        const account_id = "<%= account_id %>";
+
+        // 기간 필터를 통한 거래 내역 조회
+        function filterTransactions() {
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+
+            fetch(`/stock/details/transactions?stock_id=${stockID}&startDate=${startDate}&endDate=${endDate}`)
+                .then(response => response.json())
+                .then(data => displayTransactions(data));
+        }
+
+        // 거래 내역 테이블에 데이터 표시
+        function displayTransactions(transactions) {
+            const transactionList = document.getElementById('transactionList');
+            transactionList.innerHTML = ''; // 기존 내용 지우기
+
+            transactions.forEach(transaction => {
+                transactionList.innerHTML += `
+                    <tr>
+                        <td>${transaction.type}</td>
+                        <td>${transaction.price}</td>
+                        <td>${transaction.quantity}</td>
+                        <td>${new Date(transaction.date).toLocaleDateString()}</td>
+                        <td>${transaction.time}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        // 매수 페이지로 이동
+        function goToBuyPage() {
+            window.location.href = `/transactions/buy?stock_id=${stockID}&clientName=${clientName}&account_id=${account_id}`;
+        }
+
+        function goToSellPage() {
+            window.location.href = `/transactions/sell?stock_id=${stockID}&clientName=${clientName}&account_id=${account_id}`;
+        }
+    </script>
+</body>
+</html>
